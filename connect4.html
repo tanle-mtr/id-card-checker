@@ -2031,42 +2031,232 @@ function canPlay(card){
   return false;
 }
 
+var UNO_COLORS=['r','g','b','y']; // red, green, blue, yellow
+var UNO_TYPES=['0','1','2','3','4','5','6','7','8','9','skip','reverse','+2'];
+var UNO_CARD_W=60, UNO_CARD_H=90;
+var unoDeck=[], unoPlayerHand=[], unoAiHand=[];
+var unoPlayedCard=null, unoCurrentColor=null, unoCurrentType=null;
+var unoCurrentPlayer='player', unoGameActive=false;
+var unoScores={player:0, ai:0}, unoTurnCount=0;
+var unoDir=1; // 1=顺时针(player→ai), -1=逆时针
+var unoPendingDraw=0; // 待惩罚抽牌数
+
+function startUno() {
+  unoScores={player:0, ai:0};
+  unoDir=1;
+  unoPendingDraw=0;
+  initUnoDeck();
+  unoPlayerHand=[];
+  unoAiHand=[];
+  for(var i=0;i<7;i++){unoPlayerHand.push(unoDeck.pop());unoAiHand.push(unoDeck.pop());}
+  do{unoPlayedCard=unoDeck.pop();}while(unoPlayedCard.type.startsWith('wild'));
+  unoCurrentColor=unoPlayedCard.color;
+  unoCurrentType=unoPlayedCard.type;
+  unoCurrentPlayer='player';
+  unoGameActive=true;
+  unoTurnCount=0;
+  document.getElementById('unoDiffBadge').textContent={'easy':'简单','normal':'普通','hard':'困难'}[difficulty];
+  renderUno();
+  playStart();
+}
+
+function stopUno(){}
+
+function initUnoDeck() {
+  unoDeck=[];
+  for(var c=0;c<4;c++){
+    for(var t=0;t<UNO_TYPES.length;t++){
+      if(UNO_TYPES[t]==='0')unoDeck.push({color:UNO_COLORS[c],type:'0'});
+      else unoDeck.push({color:UNO_COLORS[c],type:UNO_TYPES[t]},{color:UNO_COLORS[c],type:UNO_TYPES[t]});
+    }
+  }
+  for(var i=0;i<4;i++){unoDeck.push({color:'wild',type:'wild'});unoDeck.push({color:'wild',type:'+4'});}
+  for(var i=unoDeck.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=unoDeck[i];unoDeck[i]=unoDeck[j];unoDeck[j]=t;}
+}
+
+function canPlay(card){
+  if(!unoGameActive||unoCurrentPlayer!=='player')return false;
+  if(card.color==='wild')return true;
+  if(card.color===unoCurrentColor)return true;
+  if(card.type===unoCurrentType)return true;
+  return false;
+}
+
+// 获取下一个玩家
+function getNextPlayer(){ return unoCurrentPlayer==='player'?'ai':'player'; }
+
 function playCard(idx){
   if(!unoGameActive||unoCurrentPlayer!=='player')return;
+  if(unoPendingDraw>0){
+    // 轮到玩家抽惩罚牌
+    unoPlayerHand.push(...unoDeck.splice(0,unoPendingDraw));
+    unoPendingDraw=0;
+    unoCurrentPlayer='player';
+    renderUno();
+    document.getElementById('unoStatus').textContent='你需抽'+unoDeck.length+'张惩罚牌，继续！';
+    return;
+  }
   var card=unoPlayerHand[idx];
   if(!canPlay(card))return;
   unoPlayerHand.splice(idx,1);
-  playCardToTable(card);
+  playCardToTable(card,'player');
   if(unoPlayerHand.length===0){endUno('player');return;}
-  unoCurrentPlayer='ai';
+  // 处理惩罚
+  if(unoPendingDraw>0){
+    unoCurrentPlayer=getNextPlayer();
+    document.getElementById('unoStatus').textContent='AI需抽'+unoPendingDraw+'张牌！';
+    renderUno();
+    unoPendingDraw=0;
+    setTimeout(aiTurn,800);
+    return;
+  }
+  unoCurrentPlayer=getNextPlayer();
   document.getElementById('unoStatus').textContent='AI思考中...';
   renderUno();
   setTimeout(aiTurn,800);
 }
 
-function playCardToTable(card){
+function playCardToTable(card,who){
   unoPlayedCard=card;
+  unoTurnCount++;
+  playDrop();
   if(card.color==='wild'){
     unoCurrentColor=aiPickColor();
-    if(card.type==='+4'){
-      var draw=difficulty==='easy'?0:4;
-      if(draw>0)unoAiHand.push(...unoDeck.splice(0,draw));
-      unoCurrentPlayer='player';
-    }
     unoCurrentType='wild';
+    if(card.type==='+4'){
+      var next=getNextPlayer();
+      unoPendingDraw+=4;
+      if(difficulty==='easy')unoPendingDraw=0;
+      // +4跳过下一家
+      unoCurrentPlayer=next===unoCurrentPlayer?getNextPlayer():next;
+    }else{
+      unoCurrentPlayer=getNextPlayer();
+    }
   }else{
     unoCurrentColor=card.color;
     unoCurrentType=card.type;
     if(card.type==='skip'||card.type==='reverse'){
-      unoCurrentPlayer=unoCurrentPlayer==='player'?'ai':'player';
+      // 单人AI：skip和reverse效果相同——当前玩家再出一轮
+      // 但实际是跳过下一家，所以当前玩家继续
+      unoCurrentPlayer=who; // 谁出的牌，谁继续
     }else if(card.type==='+2'){
-      var draw=difficulty==='easy'?0:2;
-      if(draw>0)unoAiHand.push(...unoDeck.splice(0,draw));
-      unoCurrentPlayer=unoCurrentPlayer==='player'?'ai':'player';
+      var next=getNextPlayer();
+      unoPendingDraw+=2;
+      if(difficulty==='easy')unoPendingDraw=0;
+      unoCurrentPlayer=who; // 出+2的人继续
+    }else{
+      unoCurrentPlayer=getNextPlayer();
     }
   }
-  unoTurnCount++;
-  playDrop();
+}
+
+function aiPickColor(){
+  var counts=[0,0,0,0];
+  unoAiHand.forEach(function(c){if(c.color!=='wild')counts[['r','g','b','y'].indexOf(c.color)]++;});
+  var max=0,best=0;
+  for(var i=0;i<4;i++)if(counts[i]>max){max=counts[i];best=i;}
+  return UNO_COLORS[best];
+}
+
+function drawCard(){
+  if(!unoGameActive||unoCurrentPlayer!=='player')return;
+  if(unoPendingDraw>0){
+    unoPlayerHand.push(...unoDeck.splice(0,unoPendingDraw));
+    unoPendingDraw=0;
+    unoCurrentPlayer='ai';
+    renderUno();
+    document.getElementById('unoStatus').textContent='抽了'+unoDeck.length+'张牌，轮到AI';
+    setTimeout(aiTurn,800);
+    return;
+  }
+  if(unoDeck.length===0){
+    if(unoPlayerHand.length>1){
+      unoDeck=unoPlayerHand.splice(1);
+      for(var i=unoDeck.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=unoDeck[i];unoDeck[i]=unoDeck[j];unoDeck[j]=t;}
+    }
+  }
+  if(unoDeck.length>0){
+    unoPlayerHand.push(unoDeck.pop());
+    renderUno();
+    if(canPlay(unoPlayerHand[unoPlayerHand.length-1])){
+      // 抽到可出的牌，询问是否出
+      document.getElementById('unoStatus').textContent='抽到可出的牌，是否出牌？';
+    }else{
+      unoCurrentPlayer='ai';
+      setTimeout(aiTurn,800);
+    }
+  }else{
+    unoCurrentPlayer='ai';
+    setTimeout(aiTurn,800);
+  }
+}
+
+function aiTurn(){
+  if(!unoGameActive||unoCurrentPlayer!=='ai')return;
+  // AI抽惩罚牌
+  if(unoPendingDraw>0){
+    unoAiHand.push(...unoDeck.splice(0,unoPendingDraw));
+    unoPendingDraw=0;
+    renderUno();
+    document.getElementById('unoStatus').textContent='AI抽了'+unoDeck.length+'张牌';
+    setTimeout(function(){
+      unoCurrentPlayer='player';
+      document.getElementById('unoStatus').textContent='你的回合！';
+      renderUno();
+    },600);
+    return;
+  }
+  // AI出牌
+  var bestIdx=-1,bestCard=null;
+  for(var i=0;i<unoAiHand.length;i++){
+    var c=unoAiHand[i];
+    var isWild=c.color==='wild';
+    var isMatch=c.color===unoCurrentColor||c.type===unoCurrentType;
+    if(!isWild&&!isMatch)continue;
+    if(bestIdx===-1||(!isWild&&(bestCard&&bestCard.color==='wild'))){bestIdx=i;bestCard=c;}
+  }
+  if(bestIdx>=0){
+    unoAiHand.splice(bestIdx,1);
+    playCardToTable(bestCard,'ai');
+    if(unoAiHand.length===0){endUno('ai');return;}
+    if(unoPendingDraw>0){
+      unoCurrentPlayer=getNextPlayer();
+      renderUno();
+      document.getElementById('unoStatus').textContent='你需抽'+unoPendingDraw+'张牌！';
+      unoPendingDraw=0;
+      return;
+    }
+  }else{
+    if(unoDeck.length>0)unoAiHand.push(unoDeck.pop());
+  }
+  unoCurrentPlayer='player';
+  document.getElementById('unoStatus').textContent='你的回合！';
+  renderUno();
+}
+
+function endUno(winner) {
+  unoGameActive = false;
+  var icon = document.getElementById('unoResultIcon');
+  var title = document.getElementById('unoResultTitle');
+  var sub = document.getElementById('unoResultSub');
+  var score = document.getElementById('unoEndScore');
+  if (winner === 'player') {
+    unoScores.player++;
+    icon.textContent = '🎉';
+    title.textContent = '你赢了！';
+    title.style.color = '#e94560';
+    sub.textContent = '恭喜！UNO！';
+    playWin();
+  } else {
+    unoScores.ai++;
+    icon.textContent = '😈';
+    title.textContent = 'AI赢了！';
+    title.style.color = '#4ea8de';
+    sub.textContent = '再接再厉！';
+    playLose();
+  }
+  score.textContent = '总分  你 ' + unoScores.player + ' : ' + unoScores.ai + ' AI';
+  showScreen('unoEndScreen');
 }
 
 function aiPickColor(){
