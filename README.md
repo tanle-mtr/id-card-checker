@@ -1,10 +1,10 @@
 # 在线工具集 | Online Tools
 
+基于 [蓝玉科技](https://id.lanyul.com/) 数据源的身份证号码真伪核验与信息查询工具。纯前端实现，无需后端服务，可直接部署到 GitHub Pages 静态站点。
+
 [![GitHub Pages](https://github.com/tanle-mtr/id-card-checker/actions/workflows/pages.yml/badge.svg)](https://github.com/tanle-mtr/id-card-checker/actions/workflows/pages.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 [![License: Senior Player](https://img.shields.io/badge/License-Senior_Player-blue.svg)](./LICENSE-SENIOR.md)
-
-基于 Next.js 15 构建的多功能在线工具平台，集成多个实用查询工具。
 
 ## 工具列表
 

@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>身份证号码查询 | ID Card Checker</title>
+  <meta name="description" content="身份证号码真伪核验工具，支持格式校验、归属地解析、出生日期性别识别，跳转官方数据库进行真实性核验" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪪</text></svg>" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            slate: { 850: '#0f172a' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    input[type=text]::placeholder { color: #94a3b8; }
+    .dark input[type=text]::placeholder { color: #64748b; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { animation: spin 0.8s linear infinite; }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100 transition-colors duration-300">
+  <script>
+    (function(){
+      var t = localStorage.getItem('id-theme');
+      if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme:dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      }
+    })();
+  </script>
+
+  <nav class="sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/90">
+    <div class="mx-auto max-w-2xl px-4 py-3 flex items-center justify-between">
+      <a href="/" class="text-base font-bold tracking-tight text-blue-600 dark:text-blue-400">身份证查询</a>
+      <button id="themeBtn" class="rounded-lg px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors">
+        🌙
+      </button>
+    </div>
+  </nav>
+
+  <main class="mx-auto max-w-2xl px-4 py-10">
+    <header class="mb-8 text-center">
+      <span class="inline-block rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-600 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300">
+        蓝玉科技数据源 · GB 11643-1999
+      </span>
+      <h1 class="mt-4 text-3xl font-extrabold tracking-tight sm:text-4xl">身份证号码查询</h1>
+      <p class="mt-2 text-slate-500 dark:text-slate-400">输入身份证号码，验证格式并解析归属地、出生日期、性别等信息</p>
+    </header>
+
+    <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div class="space-y-3">
+        <div>
+          <label class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">
+            身份证号码 <span class="text-red-500">*</span>
+          </label>
+          <input type="text" id="idcardInput" maxlength="18"
+            class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-base font-mono tracking-widest outline-none transition-colors focus:border-blue-400 focus:bg-white dark:border-slate-700 dark:bg-slate-800 dark:focus:border-blue-500"
+            placeholder="请输入15位或18位身份证号码" autocomplete="off" />
+        </div>
+        <div>
+          <label class="mb-1 block text-sm font-medium text-slate-600 dark:text-slate-300">
+            姓名 <span class="text-slate-400 font-normal">(用于核验链接，选填)</span>
+          </label>
+          <input type="text" id="nameInput" maxlength="20"
+            class="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-base outline-none transition-colors focus:border-blue-400 focus:bg-white dark:border-slate-700 dark:bg-slate-800 dark:focus:border-blue-500"
+            placeholder="请输入姓名（如需要核验身份证与姓名一致性）" />
+        </div>
+        <button id="queryBtn"
+          class="w-full rounded-xl bg-blue-600 px-6 py-3 text-base font-semibold text-white transition-colors hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed">
+          查询
+        </button>
+      </div>
+
+      <div id="errorBox" class="mt-4 hidden rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400"></div>
+      <div id="loadingBox" class="mt-6 hidden flex items-center justify-center gap-3 text-slate-500 dark:text-slate-400">
+        <svg class="spinner h-5 w-5 text-blue-500" viewBox="0 0 24 24" fill="none">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+        </svg>
+        查询中…
+      </div>
+
+      <div id="resultBox" class="mt-6 hidden space-y-4"></div>
+    </div>
+
+    <footer class="mt-8 space-y-2 text-center">
+      <p class="text-xs text-slate-400 dark:text-slate-600">
+        数据来源：蓝玉科技 id.lanyul.com · 格式校验基于国标 GB 11643-1999 算法
+      </p>
+      <p class="text-xs text-slate-400 dark:text-slate-600">
+        如需核验身份证真实性及姓名一致性，请输入姓名后点击"官方数据库核验"跳转至蓝玉科技核验系统
+      </p>
+      <p class="mt-3">
+        <a href="https://github.com/tanle-mtr/id-card-checker" target="_blank" rel="noopener noreferrer"
+          class="text-xs text-blue-500 hover:underline inline-flex items-center gap-1">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          GitHub 开源项目
+        </a>
+      </p>
+    </footer>
+  </main>
+
+<script>
+const CHECK_SUM_MAP = ['1','0','X','9','8','7','6','5','4','3','2'];
+const WEIGHTS = [7,9,10,5,8,4,2,1,6,3,7,9,10,5,8,4,2];
+
+function calcChecksum(id) {
+  let sum = 0;
+  for (let i = 0; i < 17; i++) sum += parseInt(id[i], 10) * WEIGHTS[i];
+  return CHECK_SUM_MAP[sum % 11];
+}
+
+function sexDisplay(raw) {
+  const map = {'男':'男','女':'女','M':'男','F':'女','1':'男','0':'女'};
+  return map[raw] ?? raw;
+}
+
+function getAge(birthStr) {
+  if (!birthStr) return '-';
+  const [y, m, d] = birthStr.split('-').map(Number);
+  const today = new Date();
+  let age = today.getFullYear() - y;
+  if (today.getMonth() + 1 < m || (today.getMonth() + 1 === m && today.getDate() < d)) age--;
+  return age;
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorBox');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  document.getElementById('resultBox').classList.add('hidden');
+}
+
+function showLoading() {
+  document.getElementById('errorBox').classList.add('hidden');
+  document.getElementById('resultBox').classList.add('hidden');
+  document.getElementById('loadingBox').classList.remove('hidden');
+}
+
+function hideLoading() {
+  document.getElementById('loadingBox').classList.add('hidden');
+}
+
+function renderResult(data) {
+  const { idcard, birth, sex, district } = data;
+  const checksumExpected = idcard.length === 18 ? calcChecksum(idcard) : null;
+  const checksumValid = checksumExpected ? idcard[17].toUpperCase() === checksumExpected : true;
+  const age = getAge(birth);
+  const name = document.getElementById('nameInput').value.trim();
+  const verifyUrl = name
+    ? `https://lanyul.com/idcard?name=${encodeURIComponent(name)}&idcard=${encodeURIComponent(idcard)}`
+    : null;
+
+  let badgeClass, badgeText;
+  if (!checksumExpected) {
+    badgeClass = 'border-green-200 bg-green-50 text-green-700 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-400';
+    badgeText = `✓ ${idcard.length === 15 ? '15位旧版' : '18位新版'}身份证号码格式有效`;
+  } else if (checksumValid) {
+    badgeClass = 'border-green-200 bg-green-50 text-green-700 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-400';
+    badgeText = '✓ 身份证号码格式校验通过';
+  } else {
+    badgeClass = 'border-red-200 bg-red-50 text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400';
+    badgeText = `✗ 校验码错误（应为 ${checksumExpected}）`;
+  }
+
+  const resultHtml = `
+    <div class="rounded-xl border px-4 py-3 text-sm font-semibold ${badgeClass}">${badgeText}</div>
+    <div class="grid grid-cols-2 gap-3">
+      ${[['归属地', district], ['出生日期', birth], ['性别', sexDisplay(sex)], ['年龄', age + ' 岁']].map(([label, value]) => `
+        <div class="rounded-xl border border-slate-100 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-800/50">
+          <div class="text-xs text-slate-400 dark:text-slate-500">${label}</div>
+          <div class="mt-1 text-base font-semibold text-slate-800 dark:text-slate-100">${value}</div>
+        </div>
+      `).join('')}
+    </div>
+    ${verifyUrl ? `
+      <a href="${verifyUrl}" target="_blank" rel="noopener noreferrer"
+        class="flex items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-600 transition-colors hover:bg-blue-100 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/20">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+        官方数据库核验（身份证+姓名一致性验证）
+      </a>
+    ` : `
+      <p class="text-center text-xs text-slate-400 dark:text-slate-500">输入姓名后可进行官方数据库一致性核验</p>
+    `}
+    <button onclick="copyResult()"
+      class="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-500 transition-colors hover:bg-slate-50 dark:border-slate-700 dark:text-slate-400 dark:hover:bg-slate-800"
+      id="copyBtn">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/></svg>
+      复制结果
+    </button>
+  `;
+
+  const box = document.getElementById('resultBox');
+  box.innerHTML = resultHtml;
+  box.classList.remove('hidden');
+}
+
+async function query() {
+  const idcard = document.getElementById('idcardInput').value.trim().toUpperCase();
+  const name = document.getElementById('nameInput').value.trim();
+
+  document.getElementById('errorBox').classList.add('hidden');
+  document.getElementById('resultBox').classList.add('hidden');
+
+  if (!idcard) { showError('请输入身份证号码'); return; }
+  if (!/^\d{15}(\d{2}[\dXx])?$/.test(idcard)) { showError('身份证号码格式不正确，请输入15位或18位号码'); return; }
+
+  showLoading();
+
+  try {
+    const formBody = new URLSearchParams({ idcard });
+    const res = await fetch('https://id.lanyul.com/back/idcard/simple', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: formBody.toString(),
+      signal: AbortSignal.timeout(10000),
+    });
+
+    hideLoading();
+
+    if (!res.ok) { showError(`查询服务异常（${res.status}），请稍后重试`); return; }
+
+    const json = await res.json();
+    if (json.code !== 200 || !json.data) { showError(json.error || '查询失败，请稍后重试'); return; }
+
+    renderResult(json.data);
+  } catch (err) {
+    hideLoading();
+    showError(err.name === 'AbortError' ? '查询超时，请检查网络后重试' : '网络错误，请稍后重试');
+  }
+}
+
+function copyResult() {
+  const idcard = document.getElementById('idcardInput').value.trim().toUpperCase();
+  const district = document.getElementById('resultBox').textContent.includes('归属地')
+    ? document.querySelector('#resultBox [class*="font-semibold"]').textContent
+    : '';
+  const text = `身份证号：${idcard}\n${document.getElementById('resultBox').innerText.replace(/^(身份证号：.*?\n)/, '').replace('✓ ', '').replace('✗ ', '')}`;
+
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copyBtn');
+    const orig = btn.innerHTML;
+    btn.innerHTML = `<svg class="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg> 已复制`;
+    setTimeout(() => { btn.innerHTML = orig; }, 1500);
+  });
+}
+
+document.getElementById('queryBtn').addEventListener('click', query);
+document.getElementById('idcardInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') query(); });
+document.getElementById('nameInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') query(); });
+
+document.getElementById('themeBtn').addEventListener('click', () => {
+  const html = document.documentElement;
+  const isDark = html.classList.toggle('dark');
+  localStorage.setItem('id-theme', isDark ? 'dark' : 'light');
+  document.getElementById('themeBtn').textContent = isDark ? '☀️' : '🌙';
+});
+
+// Set initial theme button icon
+(function() {
+  const isDark = document.documentElement.classList.contains('dark');
+  document.getElementById('themeBtn').textContent = isDark ? '☀️' : '🌙';
+})();
+</script>
+</body>
+</html>
