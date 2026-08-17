@@ -2,7 +2,7 @@ import { REGISTRARS, checkoutUrl, cheapestFirstYear } from '@/lib/pricing';
 import { formatPrice, type CurrencyCode } from '@/lib/currency';
 import type { AvailabilityResult } from '@/lib/rdap';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface ScrapedPrice {
   registrar: string;
@@ -44,6 +44,8 @@ export default function ResultSection({ results, currency, rate }: Props) {
   const [loadingPrices, setLoadingPrices] = useState<Set<string>>(new Set());
 
   // 获取实时价格
+  const fetchPricesRef = useRef<(() => Promise<void>) | null>(null);
+
   useEffect(() => {
     const fetchPrices = async () => {
       const tlds = [...new Set(results.map(r => r.tld))];
@@ -67,6 +69,7 @@ export default function ResultSection({ results, currency, rate }: Props) {
         }
       }
     };
+    fetchPricesRef.current = fetchPrices;
     fetchPrices();
   }, [results]);
 
@@ -131,7 +134,9 @@ export default function ResultSection({ results, currency, rate }: Props) {
                         }
                         setScrapedPrices({});
                         // 重新获取价格
-                        await fetchPrices();
+                        if (fetchPricesRef.current) {
+                          await fetchPricesRef.current();
+                        }
                       } finally {
                         setLoadingPrices(new Set());
                       }

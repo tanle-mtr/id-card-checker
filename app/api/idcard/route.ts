@@ -1,3 +1,5 @@
+
+export const dynamic = 'force-static';
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -54,7 +56,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 本地校验校验码（仅18位）
+    // 本地校验校验码（18位）
     let checksumValid = true;
     let checksumExpected = "";
     if (idcard.length === 18) {

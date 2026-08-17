@@ -1,3 +1,5 @@
+
+export const dynamic = 'force-static';
 import { NextResponse } from "next/server";
 import { scrapePrices, getCachedPrices, setCachedPrices } from "@/lib/price-scraper";
 
@@ -16,7 +18,7 @@ export async function POST(req: Request) {
   const force = body.force === true;
 
   if (!tld || tld.length < 2 || tld.length > 10) {
-    return NextResponse.json({ error: "无效的 TLD" }, { status: 400 });
+    return NextResponse.json({ error: "无效TLD" }, { status: 400 });
   }
 
   // 检查缓存
@@ -42,7 +44,7 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const tld = searchParams.get("tld");
-  
+
   if (!tld) {
     return NextResponse.json({ error: "缺少 tld 参数" }, { status: 400 });
   }

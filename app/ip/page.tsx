@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 
 interface IpData {
   ip?: string;
+  query?: string;
   country?: string;
   countryCode?: string;
   regionName?: string;
@@ -31,10 +32,10 @@ export default function IpPage() {
 
   const fetchMyIp = async () => {
     try {
-      const res = await fetch('/api/ip');
+      const res = await fetch('http://ip-api.com/json/?fields=status,country,regionName,city,zip,lat,lon,timezone,isp,org,as');
       const data = await res.json();
-      if (data.data) {
-        setMyIp(data.data);
+      if (data.status === 'success') {
+        setMyIp(data);
       }
     } catch {
       // ignore
@@ -50,12 +51,13 @@ export default function IpPage() {
     setResult(null);
 
     try {
-      const res = await fetch(`/api/ip?ip=${encodeURIComponent(ip.trim())}`);
+      const target = ip.trim();
+      const res = await fetch(`http://ip-api.com/json/${target}?fields=status,country,regionName,city,zip,lat,lon,timezone,isp,org,as`);
       const data = await res.json();
-      if (data.data) {
-        setResult(data.data);
+      if (data.status === 'success') {
+        setResult(data);
       } else {
-        setError(data.error || '查询失败');
+        setError(data.message || '查询失败');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : '网络错误');
@@ -123,7 +125,7 @@ export default function IpPage() {
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
               <span className="text-emerald-600/70 dark:text-emerald-400/70">IP:</span>
-              <span className="ml-2 font-mono font-medium text-emerald-700 dark:text-emerald-200">{myIp.ip}</span>
+              <span className="ml-2 font-mono font-medium text-emerald-700 dark:text-emerald-200">{myIp.query}</span>
             </div>
             <div>
               <span className="text-emerald-600/70 dark:text-emerald-400/70">国家:</span>
@@ -144,7 +146,7 @@ export default function IpPage() {
       {result && (
         <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/60">
           <div className="mb-4 flex items-center gap-3">
-            <span className="text-2xl font-semibold">{result.ip}</span>
+            <span className="text-2xl font-semibold">{result.query}</span>
             {result.countryCode && (
               <span className="text-2xl">{getFlag(result.countryCode)}</span>
             )}

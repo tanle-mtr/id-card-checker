@@ -1,3 +1,5 @@
+
+export const dynamic = 'force-static';
 import { NextResponse } from "next/server";
 import { checkDomain } from "@/lib/rdap";
 import { domainToASCII } from "node:url";

@@ -1,3 +1,5 @@
+
+export const dynamic = 'force-static';
 import { NextRequest, NextResponse } from 'next/server';
 import { loadPublicPaymentConfig, savePaymentConfig, validatePaymentConfig } from '@/lib/paymentConfig';
 import { PaymentConfig } from '@/types';
@@ -41,5 +43,3 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: { message: 'Failed to save config', code: 'internal_error' } }, { status: 500 });
   }
 }
-
-export const dynamic = 'force-dynamic';

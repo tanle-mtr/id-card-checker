@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { OpenAIService } from '@/lib/openai';
 
+export const dynamic = 'force-static';
+
 export async function GET(request: NextRequest) {
   try {
     const models = OpenAIService.listModels();

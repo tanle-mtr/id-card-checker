@@ -50,8 +50,21 @@
     "node_modules",
     "ds-ref",
     "filebox",
+    "filebox-m365",
     "deepseek-free-api",
     "deepseek-free-api-vercel",
-    "ollama-explorer"
+    "ollama-explorer",
+    "opencode",
+    "opencode_fixed",
+    "opencode_project",
+    "opencode_repo",
+    "opencode_upstream",
+    "pay-page",
+    "flyingmouse-format",
+    "game-deploy",
+    "id-card-checker",
+    "AI-App-Generator",
+    "CUsersAdministratorDocumentsDefault Projecttiantian-navigation",
+    "tiantian-navigation"
   ]
 }

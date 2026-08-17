@@ -145,14 +145,15 @@ export function getPrices(tld: string): ScrapedPrice[] {
 export function getCheapestPrice(tld: string, currency?: string): { registrar: string; price: number } | null {
   const prices = getPrices(tld);
   if (prices.length === 0) return null;
-  
-  const filtered = currency 
+
+  const filtered = currency
     ? prices.filter(p => p.currency === currency)
     : prices;
-  
+
   if (filtered.length === 0) return null;
-  
-  return filtered.reduce((min, p) => p.firstYear! < min.firstYear! ? p : min, filtered[0]);
+
+  const min = filtered.reduce((m, p) => p.firstYear !== null && p.firstYear! < (m.firstYear ?? Infinity) ? p : m, filtered[0]);
+  return min.firstYear !== null ? { registrar: min.registrar, price: min.firstYear } : null;
 }
 
 /**

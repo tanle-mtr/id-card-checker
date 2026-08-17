@@ -1,3 +1,5 @@
+
+export const dynamic = 'force-static';
 import { NextResponse } from "next/server";
 import { getPrices, refreshPrices, getCheapestPrice } from "@/lib/price-database";
 
@@ -17,13 +19,13 @@ export async function POST(req: Request) {
   const currency = String(body.currency ?? "");
 
   if (!tld || tld.length < 2 || tld.length > 10) {
-    return NextResponse.json({ error: "无效的 TLD" }, { status: 400 });
+    return NextResponse.json({ error: "无效TLD" }, { status: 400 });
   }
 
   try {
     let prices;
     let message = "";
-    
+
     if (refresh) {
       const result = await refreshPrices(tld);
       message = result.message;
@@ -35,12 +37,12 @@ export async function POST(req: Request) {
     // 获取最便宜价格
     const cheapest = getCheapestPrice(tld, currency || undefined);
 
-    return NextResponse.json({ 
-      tld, 
-      prices, 
+    return NextResponse.json({
+      tld,
+      prices,
       cheapest,
       message,
-      timestamp: Date.now() 
+      timestamp: Date.now()
     });
   } catch (error) {
     return NextResponse.json(
@@ -54,13 +56,13 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const tld = searchParams.get("tld");
   const currency = searchParams.get("currency");
-  
+
   if (!tld) {
     return NextResponse.json({ error: "缺少 tld 参数" }, { status: 400 });
   }
 
   const prices = getPrices(tld);
   const cheapest = getCheapestPrice(tld, currency || undefined);
-  
+
   return NextResponse.json({ tld, prices, cheapest, timestamp: Date.now() });
 }

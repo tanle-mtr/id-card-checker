@@ -1,3 +1,5 @@
+
+export const dynamic = 'force-static';
 import { NextResponse } from "next/server";
 import net from "node:net";
 import { domainToASCII } from "node:url";
@@ -128,7 +130,7 @@ function parseWhoisText(data: string, tld?: string): ParsedWhois | null {
 
     const colonIdx = trimmed.indexOf(":");
     if (colonIdx === -1) {
-      //  continuation line
+      // continuation line
       if (lastKey && parsed[lastKey as keyof ParsedWhois]) {
         const key = lastKey as keyof ParsedWhois;
         if (key === "nameservers" || key === "status") {
