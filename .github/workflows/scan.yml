@@ -1,0 +1,58 @@
+name: xyz domain scanner
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+    inputs:
+      scan_total:
+        description: 'Total domains to scan (default 1000000)'
+        type: number
+        default: 1000000
+      commit_every:
+        description: 'Commit every N domains (default 100000)'
+        type: number
+        default: 100000
+      scan_concurrency:
+        description: 'Concurrent DNS checks (default 100)'
+        type: number
+        default: 100
+      scan_debug:
+        description: 'Enable debug logging (1/0)'
+        type: string
+        default: '0'
+      force_rescan:
+        description: 'Force incremental rescan, ignore freshness check (1/0)'
+        type: string
+        default: '0'
+      fresh_hours:
+        description: 'Skip rebuild if last scan was less than this many hours ago'
+        type: number
+        default: 24
+
+permissions:
+  contents: write
+
+concurrency:
+  group: xyz-scanner
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run scanner
+        run: node worker/scan.mjs
+        env:
+          COMMIT: '1'
+          SCAN_TOTAL: ${{ inputs.scan_total }}
+          COMMIT_EVERY: ${{ inputs.commit_every }}
+          SCAN_CONCURRENCY: ${{ inputs.scan_concurrency }}
+          SCAN_DEBUG: ${{ inputs.scan_debug }}
+          SCAN_FORCE: ${{ inputs.force_rescan }}
+          SCAN_FRESH_HOURS: ${{ inputs.fresh_hours || '0' }}

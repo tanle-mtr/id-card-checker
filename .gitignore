@@ -1,6 +1,73 @@
+# dependencies
 node_modules/
-.next/
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+.THUMBNAILS
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# env files (can opt-in for committing if needed)
+.env*.local
 .env.local
 .env.production.local
+.env.development.local
+.env.test.local
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# dev
 dev.pid
+
+# logs
 *.log
+
+# OS
+.DS_Store
+
+# playwright
+.playwright-cli/
+
+# other projects / backups
+AI-App-Generator/
+CUsersAdministratorDocumentsDefault*
+deepseek-free-api-vercel/
+deepseek-free-api/
+ds-ref/
+filebox-docs/
+filebox-m365/
+flyingmouse-format/
+game-deploy/
+id-card-checker/
+ollama-explorer/
+opencode/
+opencode_fixed/
+opencode_project/
+opencode_upstream/
+pay-page/
+tiantian-navigation/
+%TEMP_DIR%/
+
+# large files
+*.log
+*.pid
