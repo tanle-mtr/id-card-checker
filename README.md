@@ -1,124 +1,99 @@
-# 在线工具集 | Online Tools
+# 身份证号码查询工具
 
-基于 [蓝玉科技](https://id.lanyul.com/) 数据源的身份证号码真伪核验与信息查询工具。纯前端实现，无需后端服务，可直接部署到 GitHub Pages 静态站点。
+基于 [蓝玉科技](https://id.lanyul.com/) 数据源的身份证号码真伪核验与信息查询工具。纯前端实现，零依赖，可直接部署为静态站点。
 
 [![GitHub Pages](https://github.com/tanle-mtr/id-card-checker/actions/workflows/pages.yml/badge.svg)](https://github.com/tanle-mtr/id-card-checker/actions/workflows/pages.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
-[![License: Senior Player](https://img.shields.io/badge/License-Senior_Player-blue.svg)](./LICENSE-SENIOR.md)
 
-## 工具列表
+## 在线使用
 
-| 工具 | 说明 | 路径 |
-|------|------|------|
-| 身份证查询 | 格式校验、归属地解析、官方数据库核验 | `/id` |
-| WHOIS 查询 | 域名注册信息、到期时间、注册商查询 | `/whois` |
-| IP 查询 | IP 地理位置、ISP、组织信息 | `/ip` |
-| 域名价格查询 | 多注册商首年与续费价格对比 | `/` |
-| 便宜域名 | 发现低价域名推荐 | `/cheap` |
+👉 **Cloudflare Pages**: https://id-card-checker.pages.dev/ （已部署，可访问）
+👉 **GitHub Pages**: https://tanle-mtr.github.io/id-card-checker/ （部署中）
+
+> **自定义域名** `id.tanle.cc.cd` 已在 GitHub Pages 配置完成（verified），需在 Cloudflare Dashboard 手动添加 DNS CNAME 记录。
 
 ## 功能特性
 
-### 身份证查询
-- 支持 15 位旧版与 18 位新版身份证号码
-- 基于国标 GB 11643-1999 校验码算法
-- 识别省、市、区三级行政区划
-- 解析出生日期、性别、年龄
-- 连接官方数据库进行姓名一致性核验
+- **格式校验** — 支持 15 位旧版与 18 位新版身份证号码
+- **校验码验证** — 基于国标 GB 11643-1999 加权求和算法，自动检测最后一位校验码是否正确
+- **归属地解析** — 识别省、市、区三级行政区划
+- **出生日期 & 性别** — 从号码中解析出生日期和性别信息
+- **年龄计算** — 根据当前日期自动计算周岁
+- **官方数据库核验** — 输入姓名后跳转至蓝玉科技系统，进行身份证与姓名一致性验证
 
-### WHOIS 查询
-- 支持 com/net/org/xyz/cn 等主流后缀
-- 同时查询 RDAP 与 TCP WHOIS
-- 自动解析注册商、创建/到期日期、Nameservers
-- 显示域名剩余天数与到期提醒
+## 数据源说明
 
-### IP 查询
-- 查询任意 IP 地址的地理位置
-- 自动检测当前访问者 IP
-- 显示 ISP、组织、ASN 信息
-- 经纬度坐标展示
-
-### 域名价格查询
-- 对比 GoDaddy、Namecheap、阿里云等主流注册商
-- 首年与续费价格对比
-- 支持 USD/CNY 货币切换
+| 功能 | 数据源 | 说明 |
+|------|--------|------|
+| 号码解析（归属地、出生日期、性别） | [蓝玉科技](https://id.lanyul.com/back/idcard/simple) | 免费 API，无需授权 |
+| 真实性核验（身份证+姓名一致性） | [蓝玉科技核验系统](https://lanyul.com/idcard) | 连接官方数据库，需姓名辅助验证 |
+| 校验码计算 | 本地实现（GB 11643-1999） | 完全离线，不依赖外部服务 |
 
 ## 技术栈
 
-- **框架**: Next.js 15 (App Router, Static Export)
-- **语言**: TypeScript
-- **样式**: Tailwind CSS
-- **部署**: Vercel / GitHub Pages
+- **纯静态 HTML** — 零依赖，单文件即可运行
+- **Tailwind CSS (CDN)** — 现代化样式，支持暗色模式
+- **原生 JavaScript** — 无框架，加载迅速
 
-## 本地开发
+## 本地使用
 
-```bash
-# 安装依赖
-npm install
-
-# 启动开发服务器
-npm run dev
-```
-
-访问 http://localhost:3000
-
-## 构建与部署
-
-项目已配置静态导出，可直接部署到 GitHub Pages：
+直接双击打开 `index.html` 即可使用，无需安装任何依赖。
 
 ```bash
-npm run build
+# 或用任意 HTTP 服务器
+npx serve .
+# 访问 http://localhost:3000
 ```
 
-构建产物输出至 `./out` 目录。
+## 部署
 
-### GitHub Pages
+### Cloudflare Pages（已部署）
 
-已通过 GitHub Actions 自动部署：
-- 推送至 `main` 分支自动触发构建与部署
-- 也支持手动触发 (`workflow_dispatch`)
+```bash
+# 安装 wrangler CLI
+npm install -g wrangler
 
-### Vercel
+# 登录 Cloudflare
+wrangler login
 
-一键部署到 Vercel，支持自动预览和 CI/CD：
+# 创建 Pages 项目
+wrangler pages project create id-card-checker --production-branch main
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/tanle-mtr/id-card-checker)
-
-## 项目结构
-
+# 部署
+wrangler pages deploy . --project-name=id-card-checker
 ```
-├── app/
-│   ├── api/           # API 路由
-│   │   ├── ip/        # IP 查询接口
-│   │   ├── whois/     # WHOIS 查询接口
-│   │   └── idcard/    # 身份证查询接口
-│   ├── id/            # 身份证查询页面
-│   ├── ip/            # IP 查询页面
-│   ├── whois/         # WHOIS 查询页面
-│   ├── cheap/         # 便宜域名页面
-│   ├── layout.tsx     # 全局布局（含导航）
-│   └── page.tsx       # 首页（域名价格查询）
-├── components/        # React 组件
-├── lib/               # 工具函数
-├── public/            # 静态资源
-├── .github/workflows/ # GitHub Actions 工作流
-├── LICENSE            # MIT License
-├── LICENSE-SENIOR.md  # 资深玩家许可证
-├── package.json
-└── README.md
-```
+
+访问 https://id-card-checker.pages.dev/
+
+### GitHub Pages（自动部署）
+
+仓库已配置 GitHub Actions，推送到 `main` 分支后自动部署到 https://tanle-mtr.github.io/id-card-checker/
+
+### 自定义域名配置
+
+#### 方式一：Cloudflare Pages + 自定义域名
+
+1. 在 [Cloudflare Dashboard](https://dash.cloudflare.com) 进入 Projects
+2. 选择 `id-card-checker` 项目
+3. 点击 **Custom Domains** → **Set up a custom domain**
+4. 输入 `id.tanle.cc.cd`
+5. Cloudflare 会自动创建 DNS 记录
+
+#### 方式二：GitHub Pages + 自定义域名
+
+1. 在仓库设置中添加 CNAME 文件（已添加）：
+   ```
+   tanle-mtr.github.io
+   ```
+2. 在 [Cloudflare Dashboard](https://dash.cloudflare.com) → DNS → Records 中添加：
+   | 类型 | 名称 | 内容 | Proxy |
+   |------|------|------|-------|
+   | CNAME | id | `tanle-mtr.github.io` | DNS only（灰色云） |
 
 ## 免责声明
 
-- 身份证查询数据来源于蓝玉科技公开接口，仅供参考
-- WHOIS 数据来源于各注册局公开信息，可能存在延迟
-- IP 数据来源于 ip-api.com，仅供学习参考
-- 以上工具结果均不构成任何法律证明
+本工具仅通过国家标准算法校验身份证号码格式与校验码，数据来源于蓝玉科技公开接口。查询结果仅供参考，不构成任何法律证明。如需正式核验身份证真实性，请使用公安机关官方渠道。
 
 ## 许可证
 
-本项目采用双重许可证：
-
-- **MIT License** — 允许自由使用、修改和分发（详见 [LICENSE](./LICENSE)）
-- **资深玩家许可证** — 允许非商业学习与交流，禁止商业使用（详见 [LICENSE-SENIOR.md](./LICENSE-SENIOR.md)）
-
-商业授权请联系：tanle-mtr
+[MIT License](./LICENSE)
