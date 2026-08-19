@@ -372,7 +372,7 @@ export default function IpPage() {
                     {ports.length === 0 ? (
                       <tr>
                         <td colSpan={3} className="py-8 text-center text-slate-400">
-                          点击"扫描"开始探测端口
+                          点击&#34;扫描&#34;开始探测端口
                         </td>
                       </tr>
                     ) : (
