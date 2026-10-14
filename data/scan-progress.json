@@ -1,16 +1,16 @@
 {
   "tld": "xyz",
-  "next": 400000,
+  "next": 500000,
   "total": 1000000,
   "completed": false,
   "startedAt": 1792012724253,
-  "updatedAt": 1792014597961,
+  "updatedAt": 1792014965294,
   "completedAt": null,
   "counts": {
-    "available": 386710,
-    "registered": 13290,
+    "available": 464428,
+    "registered": 35572,
     "unknown": 0,
-    "expiring": 0,
+    "expiring": 3,
     "expired": 0,
     "confirmed": 0
   }
