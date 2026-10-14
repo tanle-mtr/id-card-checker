@@ -2,10 +2,10 @@
   "tld": "xyz",
   "next": 1000000,
   "total": 1000000,
-  "completed": false,
+  "completed": true,
   "startedAt": 1792012724253,
-  "updatedAt": 1792017096482,
-  "completedAt": null,
+  "updatedAt": 1792017098229,
+  "completedAt": 1792017098229,
   "counts": {
     "available": 915030,
     "registered": 84970,
